@@ -11,6 +11,12 @@ import "./Register.css";
 const Register = () => {
   const { enqueueSnackbar } = useSnackbar();
 
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [isSubmit , setIsSubmit] = useState(false);
+
 
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement the register function
   /**
@@ -36,6 +42,36 @@ const Register = () => {
    * }
    */
   const register = async (formData) => {
+    
+    setIsSubmit(true);
+    
+    //if(!validateInput(username,password,confpassword)){return;}
+    try{
+
+     if(!validateInput(username,password,confirmPassword)){return;}
+
+      const res=await axios.post(`${config.endpoint}/auth/register`,{username,password});
+      
+      if(res.status===201){
+        enqueueSnackbar("Registered Successfully",{
+          variant:"success",
+          persist:false
+        });
+      }
+    
+    }
+    catch(error){
+      //console.log(error.response.status)
+        if(error.response.status === 400){
+          enqueueSnackbar(`${error.response.data.message}`,{variant:"error",persist:false});
+        }
+        else{
+          enqueueSnackbar("Something went wrong.",{variant:"error",persist:false});
+        }
+    }
+    finally{
+      setIsSubmit(false);
+    }
   };
 
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement user input validation logic
@@ -56,7 +92,31 @@ const Register = () => {
    * -    Check that password field is not less than 6 characters in length - "Password must be at least 6 characters"
    * -    Check that confirmPassword field has the same value as password field - Passwords do not match
    */
-  const validateInput = (data) => {
+  const validateInput = (username,password,confirmPassword) => {
+    
+    if(!username){
+      enqueueSnackbar("Username is a required field",{variant:"warning",persist:false});
+      return false;
+    }
+  
+    if(username.length < 6){
+      enqueueSnackbar("Username must be at least 6 characters",{variant:"warning",persist:false});
+      return false;
+    }
+    
+    if(!password){
+      enqueueSnackbar("Password is a required field",{variant:"warning",persist:false});
+      return false;
+    }
+    if(password.length < 6){
+      enqueueSnackbar("Password must be at least 6 characters",{variant:"warning",persist:false});
+      return false;
+    }
+    if(password !== confirmPassword){
+      enqueueSnackbar("Passwords do not match",{variant:"warning",persist:false});
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -68,7 +128,7 @@ const Register = () => {
     >
       <Header hasHiddenAuthButtons />
       <Box className="content">
-        <Stack spacing={2} className="form">
+        <Stack spacing={2} className="form" onSubmit={register} >
           <h2 className="title">Register</h2>
           <TextField
             id="username"
@@ -77,6 +137,8 @@ const Register = () => {
             title="Username"
             name="username"
             placeholder="Enter Username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
             fullWidth
           />
           <TextField
@@ -85,7 +147,9 @@ const Register = () => {
             label="Password"
             name="password"
             type="password"
-            helperText="Password must be atleast 6 characters length"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            helperText={'Password must be at least 6 characters long'}
             fullWidth
             placeholder="Enter a password with minimum 6 characters"
           />
@@ -95,10 +159,12 @@ const Register = () => {
             label="Confirm Password"
             name="confirmPassword"
             type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
             fullWidth
           />
-           <Button className="button" variant="contained">
-            Register Now
+           <Button className="button" variant="contained" type="submit" onClick={register}>
+            {isSubmit ? <CircularProgress /> :'Register Now' }
            </Button>
           <p className="secondary-action">
             Already have an account?{" "}
