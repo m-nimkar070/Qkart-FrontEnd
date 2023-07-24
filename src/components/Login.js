@@ -12,6 +12,12 @@ import "./Login.css";
 const Login = () => {
   const { enqueueSnackbar } = useSnackbar();
 
+  const [username , setUsername] = useState("");
+  const [password ,setPassword] = useState("");
+  const [isLogin , setIslogin] = useState(false);
+  const [isLoggedIn , setisLoggedIn] = useState(false);
+  const history = useHistory();
+
   // TODO: CRIO_TASK_MODULE_LOGIN - Fetch the API response
   /**
    * Perform the Login API call
@@ -37,8 +43,35 @@ const Login = () => {
    * }
    *
    */
-  const login = async (formData) => {
-  };
+  async function login(formData) {
+    setIslogin(true)
+    setisLoggedIn(true);
+
+    try{
+      if(!validateInput(username , password)){return;}
+        const apiCall = await axios.post(`${config.endpoint}/auth/login`,{username,password});
+
+        if(apiCall.status===201){
+          enqueueSnackbar("Logged in successfully",{
+            variant:"success",
+            persist:false
+          });
+          persistLogin(apiCall.data.token ,apiCall.data.username,apiCall.data.balance);
+          history.push("/")
+        }
+    }
+    catch(error){
+      if(error.response.status === 400){
+        enqueueSnackbar(`${error.response.data.message}`,{variant:"error",persist:false});
+      }
+      else{
+        enqueueSnackbar("Something went wrong.",{variant:"error",persist:false});
+      }
+    }
+    finally{
+      setIslogin(false);
+    }
+  }
 
   // TODO: CRIO_TASK_MODULE_LOGIN - Validate the input
   /**
@@ -55,7 +88,16 @@ const Login = () => {
    * -    Check that username field is not an empty value - "Username is a required field"
    * -    Check that password field is not an empty value - "Password is a required field"
    */
-  const validateInput = (data) => {
+  const validateInput = (username,password) => {
+    if(!username){
+      enqueueSnackbar("Username is a required field",{variant:"warning",persist:false});
+      return false;
+    }
+    if(!password){
+      enqueueSnackbar("Password is a required field",{variant:"warning",persist:false});
+      return false;
+    }
+    return true;
   };
 
   // TODO: CRIO_TASK_MODULE_LOGIN - Persist user's login information
@@ -75,6 +117,10 @@ const Login = () => {
    * -    `balance` field in localStorage can be used to store the balance amount in the user's wallet
    */
   const persistLogin = (token, username, balance) => {
+   // console.log(token ,username,balance)
+    localStorage.setItem("username" , `${username}`);
+    localStorage.setItem("token" , `${token}`);
+    localStorage.setItem("balance" , Number(`${balance}`));
   };
 
   return (
@@ -84,9 +130,39 @@ const Login = () => {
       justifyContent="space-between"
       minHeight="100vh"
     >
-      <Header hasHiddenAuthButtons />
+      <Header hasHiddenAuthButtons={1} />
       <Box className="content">
-        <Stack spacing={2} className="form">
+        <Stack spacing={2} className="form" onSubmit={login}>
+        <h2 className="title">Login</h2>
+          <TextField
+            id="username"
+            label="Username"
+            variant="outlined"
+            title="Username"
+            name="username"
+            placeholder="Username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            fullWidth
+          />
+          <TextField
+            id="password"
+            variant="outlined"
+            label="Password"
+            name="password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            fullWidth
+            placeholder="Password"
+          />
+          <Button className="button" variant="contained" onClick={login}> {isLogin ? <CircularProgress /> : 'LOGIN TO QKART'} </Button>
+          <p className="secondary-action">
+            Don't have an account?{" "}
+             <Link className="link" to= './Register'>
+              Register Now
+              </Link>
+          </p>
         </Stack>
       </Box>
       <Footer />

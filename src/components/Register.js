@@ -17,6 +17,9 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [isSubmit , setIsSubmit] = useState(false);
+  const [isRegister , setIsRegister] = useState(false);
+  
+  const history = useHistory();
 
 
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement the register function
@@ -45,6 +48,7 @@ const Register = () => {
   const register = async (formData) => {
     
     setIsSubmit(true);
+    setIsRegister(true)
     
     //if(!validateInput(username,password,confpassword)){return;}
     try{
@@ -58,7 +62,9 @@ const Register = () => {
           variant:"success",
           persist:false
         });
+        
       }
+      history.push("/login")
     
     }
     catch(error){
@@ -127,7 +133,7 @@ const Register = () => {
       justifyContent="space-between"
       minHeight="100vh"
     >
-      <Header hasHiddenAuthButtons />
+      <Header hasHiddenAuthButtons={1} />
       <Box className="content">
         <Stack spacing={2} className="form" onSubmit={register} >
           <h2 className="title">Register</h2>
@@ -169,9 +175,9 @@ const Register = () => {
            </Button>
           <p className="secondary-action">
             Already have an account?{" "}
-             <a className="link" href="#">
+             <Link className="link" to="./login">
               Login here
-             </a>
+             </Link>
           </p>
         </Stack>
       </Box>
