@@ -7,8 +7,7 @@ import "./Header.css";
 
 const Header = ({ children, hasHiddenAuthButtons }) => {
   const history = useHistory();
-  console.log(hasHiddenAuthButtons  , "AuthButton");
-
+  
   const handleExplore = () => {
     history.push("/")
   }

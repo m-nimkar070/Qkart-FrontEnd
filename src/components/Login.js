@@ -15,7 +15,6 @@ const Login = () => {
   const [username , setUsername] = useState("");
   const [password ,setPassword] = useState("");
   const [isLogin , setIslogin] = useState(false);
-  const [isLoggedIn , setisLoggedIn] = useState(false);
   const history = useHistory();
 
   // TODO: CRIO_TASK_MODULE_LOGIN - Fetch the API response
@@ -45,7 +44,6 @@ const Login = () => {
    */
   async function login(formData) {
     setIslogin(true)
-    setisLoggedIn(true);
 
     try{
       if(!validateInput(username , password)){return;}

@@ -17,7 +17,6 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [isSubmit , setIsSubmit] = useState(false);
-  const [isRegister , setIsRegister] = useState(false);
   
   const history = useHistory();
 
@@ -48,7 +47,6 @@ const Register = () => {
   const register = async (formData) => {
     
     setIsSubmit(true);
-    setIsRegister(true)
     
     //if(!validateInput(username,password,confpassword)){return;}
     try{
