@@ -4,6 +4,7 @@ import {
   ShoppingCart,
   ShoppingCartOutlined,
 } from "@mui/icons-material";
+import { TextField } from "@mui/material";
 import { Button, IconButton, Stack } from "@mui/material";
 import { Box } from "@mui/system";
 import React from "react";
@@ -48,6 +49,19 @@ import "./Cart.css";
  *
  */
 export const generateCartItemsFrom = (cartData, productsData) => {
+  // console.log("generateCartItemsFrom is called",cartData , productsData)
+  let cartProducts = [];
+  if (cartData.length && productsData.length) {
+    for (let i = 0; i < cartData.length; i++) {
+      for (let j = 0; j < productsData.length; j++) {
+        if (cartData[i].productId === productsData[j]._id) {
+          cartProducts.push({ ...productsData[j], ...cartData[i] });
+        }
+      }
+    }
+  }
+  console.log("generateCartItemsFrom(): ", cartProducts);
+  return cartProducts;
 };
 
 /**
@@ -61,6 +75,10 @@ export const generateCartItemsFrom = (cartData, productsData) => {
  *
  */
 export const getTotalCartValue = (items = []) => {
+  return items.reduce((acc , curr)=>{
+    let value = curr.cost * curr.qty;
+    return acc + value;
+  },0);
 };
 
 
@@ -83,6 +101,7 @@ const ItemQuantity = ({
   handleAdd,
   handleDelete,
 }) => {
+  console.log(value);
   return (
     <Stack direction="row" alignItems="center">
       <IconButton size="small" color="primary" onClick={handleDelete}>
@@ -117,7 +136,7 @@ const Cart = ({
   items = [],
   handleQuantity,
 }) => {
-
+  const history = useHistory();
   if (!items.length) {
     return (
       <Box className="cart empty">
@@ -133,6 +152,26 @@ const Cart = ({
     <>
       <Box className="cart">
         {/* TODO: CRIO_TASK_MODULE_CART - Display view for each cart item with non-zero quantity */}
+        {items.map((item)=>(
+          <Box key={item.productId} display="flex" alignItems="flex-start" padding="1rem">
+            <Box className="image-container">
+              <img src={item.image} alt={item.image} width="100%" height="100%" />
+            </Box>
+            <Box display="flex" flexDirection="column" justifyContent="space-between" height="6rem" padding="1rem">
+              <Stack>
+                {item.name}
+              </Stack>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <ItemQuantity
+                  value={item.qty}
+                  handleAdd={()=>handleQuantity(item.productId , item.qty + 1)}
+                  handleDelete={()=> handleQuantity(item.productId , item.qty - 1)}
+                />
+                <Box> ${item.cost}</Box>
+              </Box>
+            </Box>
+          </Box>
+        ))}
         <Box
           padding="1rem"
           display="flex"
@@ -159,6 +198,7 @@ const Cart = ({
             variant="contained"
             startIcon={<ShoppingCart />}
             className="checkout-btn"
+            onClick={()=> history.push("/checkout")}
           >
             Checkout
           </Button>

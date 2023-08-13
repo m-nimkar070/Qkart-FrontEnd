@@ -14,6 +14,10 @@ import Footer from "./Footer";
 import Header from "./Header";
 import "./Products.css";
 import ProductCard from "./ProductCard";
+import "./Cart.css"
+import Cart from "./Cart" ;
+import {generateCartItemsFrom} from "./Cart"
+
 // Definition of Data Structures used
 /**
  * @typedef {Object} Product - Data on product available to buy
@@ -34,6 +38,10 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
 
+  //  To store items of cart
+  const [itemCart , setItemCart] = useState([]);
+  // To fetch cart items
+  const [cartLoad , setCartLoad] = useState(false);
   const token = localStorage.getItem("token"); 
 
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Fetch products data and store it
@@ -81,6 +89,7 @@ const Products = () => {
 
       setProducts(res.data);
       setFilteredProducts(res.data);
+      setCartLoad(true);
       return res.data;
     } 
     catch (e) {
@@ -100,7 +109,7 @@ const Products = () => {
       }
     }
   };
-
+  //console.log(products);
   // TODO: CRIO_TASK_MODULE_PRODUCTS - Implement search logic
   /**
    * Definition for search handler
@@ -174,6 +183,10 @@ const Products = () => {
     onLoadHandler();   
   }, []);
 
+  useEffect(() => {
+    fetchCart(token);
+  }, [cartLoad]);
+
   /**
    * Perform the API call to fetch the user's cart and return the response
    *
@@ -207,6 +220,14 @@ const Products = () => {
 
     try {
       // TODO: CRIO_TASK_MODULE_CART - Pass Bearer token inside "Authorization" header to get data from "GET /cart" API and return the response data
+      const cartCall = await axios.get(`${config.endpoint}/cart` ,
+      {headers:{'Authorization': `Bearer ${token}`}});
+      console.log("called cart", cartCall.data);
+      if(cartCall.status === 200){
+        let cartItems = generateCartItemsFrom(cartCall.data,products);
+        setItemCart(cartItems);
+      }
+      return cartCall.data;
     } catch (e) {
       if (e.response && e.response.status === 400) {
         enqueueSnackbar(e.response.data.message, { variant: "error" });
@@ -237,6 +258,13 @@ const Products = () => {
    *
    */
   const isItemInCart = (items, productId) => {
+    let isInCart = false;
+    items.forEach((item)=>{
+      if(item.productId === productId){
+        isInCart =true;
+      }
+    });
+    return isInCart;
   };
 
   /**
@@ -283,6 +311,58 @@ const Products = () => {
     qty,
     options = { preventDuplicate: false }
   ) => {
+    if (token) {
+      if (!isItemInCart(items, productId)) {
+        addInCart(productId, qty);
+      } else {
+        enqueueSnackbar(
+          "Item already in cart. Use the cart sidebar to update quantity or remove item.",
+          {
+            variant: "warning",
+          }
+        );
+      }
+    } else {
+      enqueueSnackbar("Login to add an item to the Cart", {
+        variant: "warning",
+      });
+    }
+  };
+
+
+  let handleCart = (productId) => {
+    addToCart(token, itemCart, products, productId, 1);
+  };
+
+  let handleQuantity = (productId, qty) => {
+    addInCart(productId, qty);
+  };
+
+  let addInCart = async (productId, qty) => {
+    try {
+      let response = await axios.post(
+        `${config.endpoint}/cart`,
+        {
+          productId: productId,
+          qty: qty,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      //Update cartItems
+      setItemCart(generateCartItemsFrom(response.data, products));
+    } catch (e) {
+      if (e.response && e.response.status === 400) {
+        enqueueSnackbar(e.response.data.message, { variant: "error" });
+      } else {
+        enqueueSnackbar("Could not add to cart. Something went wrong.", {
+          variant: "error",
+        });
+      }
+    }
   };
 
 
@@ -326,44 +406,48 @@ const Products = () => {
       />
        <Grid container>
          <Grid 
-         item 
-         xs={12}
+          item 
+          xs={12}
 
-         md={token && products.length ? 9:12}
-         className="product-grid">
-           <Box className="hero">
-             <p className="hero-heading">
-               India’s <span className="hero-highlight">FASTEST DELIVERY</span>{" "}
-               to your door step
-             </p>
-           </Box>
-
-           {isLoading ? (
-            <Box className="loading">
-              <CircularProgress/>
-              <h4>Loading Products...</h4>
+          md={token && products.length ? 9:12}
+          className="product-grid">
+            <Box className="hero">
+              <p className="hero-heading">
+                India’s <span className="hero-highlight">FASTEST DELIVERY</span>{" "}
+                to your door step
+              </p>
             </Box>
-           ) : (
-            <Grid container marginY="1rem" paddingX="1rem" spacing={2}>
-              {filteredProducts.length ? (
-                filteredProducts.map((product) => (
-                  <Grid item xs={6} md={3} key={product._id}>
-                    <ProductCard
-                    product={product}
 
-                    />
+            {isLoading ? (
+              <Box className="loading">
+                <CircularProgress/>
+                <h4>Loading Products...</h4>
+              </Box>
+            ) : (
+              <Grid container marginY="1rem" paddingX="1rem" spacing={2}>
+                {filteredProducts.length ? (
+                  filteredProducts.map((product) => (
+                    <Grid item xs={6} md={3} key={product._id}>
+                      <ProductCard
+                      product={product}
+                      handleAddToCart={(event) => handleCart(product["_id"])}
+                      />
                     </Grid>
-                ))
-              ) : (
-                <Box className="loading">
-                  <SentimentDissatisfied color="action" />
-                  <h4 style={{ color: "#636363" }}>No products found</h4>
-                </Box>
-              )}
-         </Grid>
-           )}
-       </Grid>
-
+                  ))
+                ) : (
+                  <Box className="loading">
+                    <SentimentDissatisfied color="action" />
+                    <h4 style={{ color: "#636363" }}>No products found</h4>
+                  </Box>
+                )}
+              </Grid>
+            )}
+        </Grid>
+        {token &&(
+          <Grid cart item xs={12} md={3}>
+             <Cart products={products} items={itemCart} handleQuantity={handleQuantity} />
+          </Grid>
+        )}
        </Grid>
       <Footer />
     </div>
