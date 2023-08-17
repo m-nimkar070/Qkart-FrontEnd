@@ -4,11 +4,13 @@ import {
   ShoppingCart,
   ShoppingCartOutlined,
 } from "@mui/icons-material";
+import { Typography } from "@mui/material";
 import { Button, IconButton, Stack } from "@mui/material";
 import { Box } from "@mui/system";
 import React from "react";
 import { useHistory } from "react-router-dom";
 import "./Cart.css";
+import Checkout from "./Checkout";
 
 // Definition of Data Structures used
 /**
@@ -48,19 +50,14 @@ import "./Cart.css";
  *
  */
 export const generateCartItemsFrom = (cartData, productsData) => {
-  // console.log("generateCartItemsFrom is called",cartData , productsData)
-  let cartProducts = [];
-  if (cartData.length && productsData.length) {
-    for (let i = 0; i < cartData.length; i++) {
-      for (let j = 0; j < productsData.length; j++) {
-        if (cartData[i].productId === productsData[j]._id) {
-          cartProducts.push({ ...productsData[j], ...cartData[i] });
-        }
-      }
-    }
-  }
-  console.log("generateCartItemsFrom(): ", cartProducts);
-  return cartProducts;
+  if(!cartData) return;
+
+  const newCart =cartData.map((item)=> ({
+    ...item,
+    ...productsData.find((product) => item.productId === product._id)
+  }));
+
+  return newCart;
 };
 
 /**
@@ -101,6 +98,7 @@ const ItemQuantity = ({
   value,
   handleAdd,
   handleDelete,
+  isReadOnly = false
 }) => {
   return (
     <Stack direction="row" alignItems="center">
@@ -133,10 +131,42 @@ const ItemQuantity = ({
  *    If product quantity on cart is to be displayed as read only without the + - options to change quantity
  * 
  */
+//   CHECKOUT PAGE DETAIL VIEW OF ITEMS IN CART 
+const getTotalItems =(details) => {
+  return details.length;
+}
+
+const OderDetailView = ({details = []}) =>{
+  //console.log(details);
+  return (
+    <Box className="cart">
+      <Box display="flex" flexDirection="column" padding="1rem">
+        <h2>Order Details</h2>
+        {/* <Typography>{Details.name}</Typography> */}
+        <Box display="flex" flexDirection="row" justifyContent="space-between">
+          <Box>
+            <p>Products</p>
+            <p>Sub-Total</p>
+            <p>Shipping Charges</p>
+            <h4>Total</h4>
+          </Box>
+          <Box>
+            <p>{getTotalItems(details)}</p>
+            <p>${getTotalCartValue(details)}</p>
+            <p>$0</p>
+            <h4>${getTotalCartValue(details)}</h4>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  )
+};
+
 const Cart = ({
   products,
   items = [],
   handleQuantity,
+  isReadOnly = false
 }) => {
   const history = useHistory();
   if (!items.length) {
@@ -164,11 +194,14 @@ const Cart = ({
                 {item.name}
               </Stack>
               <Box display="flex" justifyContent="space-between" alignItems="center">
+                {isReadOnly ?(
+                  <Box style={{ fontSize: "1rem" }}> Qty:{item.qty}</Box>
+                ) :(
                 <ItemQuantity
                   value={item.qty}
                   handleAdd={()=>handleQuantity(item.productId , item.qty + 1)}
                   handleDelete={()=> handleQuantity(item.productId , item.qty - 1)}
-                />
+                />)}
                 <Box> ${item.cost}</Box>
               </Box>
             </Box>
@@ -193,7 +226,7 @@ const Cart = ({
             ${getTotalCartValue(items)}
           </Box>
         </Box>
-
+        {isReadOnly ? null :(
         <Box display="flex" justifyContent="flex-end" className="cart-footer">
           <Button
             color="primary"
@@ -204,8 +237,9 @@ const Cart = ({
           >
             Checkout
           </Button>
-        </Box>
+        </Box>)}
       </Box>
+      {isReadOnly ? <OderDetailView details={items} /> : null}
     </>
   );
 };
